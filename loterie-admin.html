@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Loterie — Administration</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=DM+Sans:wght@300;400;500&display=swap');
+  :root {
+    --gold:#C9A84C;--gold-light:#F0D78C;--gold-dark:#8B6914;
+    --deep:#0D0D0D;--surface:#1A1A1A;--surface2:#242424;
+    --text:#F0EDE8;--muted:#888;--border:rgba(201,168,76,0.25);
+    --success:#4CAF88;--danger:#E05555;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:'DM Sans',sans-serif;background:var(--deep);color:var(--text);min-height:100vh}
+  header{background:var(--surface);border-bottom:1px solid var(--border);padding:1.5rem 2rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem}
+  header h1{font-family:'Playfair Display',serif;font-size:1.5rem;color:var(--gold)}
+  .container{max-width:1100px;margin:0 auto;padding:2rem}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem}
+  @media(max-width:780px){.grid{grid-template-columns:1fr}}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:1.5rem;margin-bottom:1.5rem}
+  .card h2{font-family:'Playfair Display',serif;font-size:1.1rem;color:var(--gold);margin-bottom:1.2rem;padding-bottom:.8rem;border-bottom:1px solid var(--border)}
+  label{display:block;font-size:.78rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:.4rem;margin-top:1rem}
+  input,select,textarea{width:100%;background:var(--surface2);border:1px solid rgba(255,255,255,.1);border-radius:6px;color:var(--text);padding:.65rem .9rem;font-family:'DM Sans',sans-serif;font-size:.9rem;transition:border-color .2s}
+  input:focus,select:focus{outline:none;border-color:var(--gold)}
+  .btn{display:inline-flex;align-items:center;gap:.5rem;padding:.7rem 1.4rem;border-radius:6px;font-family:'DM Sans',sans-serif;font-size:.88rem;font-weight:500;cursor:pointer;border:none;transition:all .15s}
+  .btn-gold{background:var(--gold);color:var(--deep)}.btn-gold:hover{background:var(--gold-light)}
+  .btn-outline{background:transparent;border:1px solid var(--border);color:var(--text)}.btn-outline:hover{border-color:var(--gold);color:var(--gold)}
+  .btn-danger{background:transparent;border:1px solid rgba(224,85,85,.4);color:var(--danger)}.btn-danger:hover{background:rgba(224,85,85,.1)}
+  .btn-row{display:flex;gap:.7rem;flex-wrap:wrap;margin-top:1.2rem}
+  .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:.8rem;margin-bottom:1.5rem}
+  .stat{background:var(--surface2);border-radius:8px;padding:1rem;text-align:center;border:1px solid var(--border)}
+  .stat-num{font-family:'Playfair Display',serif;font-size:2rem;color:var(--gold)}
+  .stat-label{font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:.07em}
+  #qr-container{display:flex;flex-direction:column;align-items:center;gap:1rem;padding:1.5rem;background:var(--surface2);border-radius:8px;border:1px dashed var(--border)}
+  #qr-container canvas,#qr-container img{border-radius:6px;background:white;padding:8px}
+  .participants-list{max-height:280px;overflow-y:auto;scrollbar-width:thin;scrollbar-color:var(--border) transparent}
+  .participant-item{display:flex;align-items:center;justify-content:space-between;padding:.6rem .8rem;border-radius:6px;margin-bottom:.3rem;font-size:.88rem;background:var(--surface2);border:1px solid rgba(255,255,255,.05)}
+  .participant-item.winner{background:rgba(201,168,76,.12);border-color:rgba(201,168,76,.3)}
+  .badge{font-size:.68rem;padding:.2rem .6rem;border-radius:20px;font-weight:500}
+  .badge-gold{background:rgba(201,168,76,.2);color:var(--gold)}
+  .badge-muted{background:rgba(255,255,255,.07);color:var(--muted)}
+  .draw-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:100;align-items:center;justify-content:center;flex-direction:column;gap:1.5rem}
+  .draw-overlay.active{display:flex}
+  .draw-drum{font-family:'Playfair Display',serif;font-size:3rem;color:var(--gold);min-height:4rem;text-align:center;padding:0 2rem}
+  .rolling{animation:drumroll .1s infinite}
+  @keyframes drumroll{0%,100%{transform:translateY(0)}50%{transform:translateY(-2px)}}
+  .winner-reveal{font-family:'Playfair Display',serif;font-size:3rem;color:var(--gold);text-align:center;animation:revealIn .5s ease}
+  @keyframes revealIn{from{opacity:0;transform:scale(.7)}to{opacity:1;transform:scale(1)}}
+  .draw-label{font-size:.9rem;color:var(--muted);text-transform:uppercase;letter-spacing:.15em}
+  .status-dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:6px}
+  .dot-open{background:var(--success);box-shadow:0 0 6px var(--success)}
+  .dot-closed{background:var(--danger);box-shadow:0 0 6px var(--danger)}
+  .lot-item{display:flex;align-items:center;justify-content:space-between;padding:.5rem .7rem;background:var(--surface2);border-radius:6px;margin-bottom:.4rem;font-size:.85rem;border:1px solid rgba(255,255,255,.05)}
+  .tab-row{display:flex;gap:.5rem;margin-bottom:1rem;border-bottom:1px solid var(--border);padding-bottom:.8rem}
+  .tab{padding:.35rem .9rem;border-radius:20px;font-size:.8rem;cursor:pointer;color:var(--muted);border:1px solid transparent;background:none;font-family:'DM Sans',sans-serif}
+  .tab.active{border-color:var(--border);color:var(--gold);background:rgba(201,168,76,.08)}
+  .section{display:none}.section.active{display:block}
+  small{color:var(--muted);font-size:.78rem}
+  hr{border:none;border-top:1px solid var(--border);margin:1.2rem 0}
+  .link-box{background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:.6rem .9rem;font-size:.82rem;color:var(--gold);word-break:break-all;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:.5rem}
+  .link-box:hover{background:#2a2a2a}
+  .copy-hint{font-size:.7rem;color:var(--muted);white-space:nowrap}
+  .empty-state{text-align:center;padding:2rem;color:var(--muted);font-size:.85rem}
+
+  /* Setup banner */
+  .setup-banner{background:rgba(201,168,76,.08);border:1px solid var(--border);border-radius:10px;padding:1.2rem 1.5rem;margin-bottom:1.5rem}
+  .setup-banner h3{color:var(--gold);font-size:1rem;margin-bottom:.5rem}
+  .setup-banner p{font-size:.85rem;color:var(--muted);line-height:1.6}
+  .setup-banner code{background:var(--surface2);padding:.1rem .4rem;border-radius:4px;font-size:.8rem;color:var(--gold-light)}
+  .config-inputs{display:grid;grid-template-columns:1fr 1fr;gap:.8rem;margin-top:1rem}
+  @media(max-width:600px){.config-inputs{grid-template-columns:1fr}}
+  .config-inputs input{font-size:.82rem}
+  .firebase-status{display:inline-flex;align-items:center;gap:.4rem;font-size:.78rem;padding:.3rem .8rem;border-radius:20px;border:1px solid var(--border)}
+  .firebase-status.ok{color:var(--success);border-color:rgba(76,175,136,.3);background:rgba(76,175,136,.08)}
+  .firebase-status.err{color:var(--danger);border-color:rgba(224,85,85,.3);background:rgba(224,85,85,.08)}
+  .firebase-status.pending{color:var(--muted)}
+  .spinner{width:14px;height:14px;border:2px solid rgba(255,255,255,.2);border-top-color:var(--gold);border-radius:50%;animation:spin .7s linear infinite;display:inline-block}
+  @keyframes spin{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>✦ Loterie — Administration</h1>
+  <div style="display:flex;align-items:center;gap:.8rem;flex-wrap:wrap">
+    <span class="firebase-status pending" id="firebase-status"><span class="spinner"></span> Connexion…</span>
+    <span id="status-badge" style="font-size:.8rem;color:var(--muted);background:var(--surface2);border:1px solid var(--border);padding:.3rem .8rem;border-radius:20px">
+      <span class="status-dot dot-open"></span>Inscriptions ouvertes
+    </span>
+  </div>
+</header>
+
+<div class="container">
+
+  <!-- Setup banner -->
+  <div class="setup-banner" id="setup-banner">
+    <h3>⚙️ Configuration Firebase requise</h3>
+    <p>Renseignez vos identifiants Firebase ci-dessous pour activer la synchronisation multi-appareils.<br>
+    Consultez le fichier <code>GUIDE.html</code> pour obtenir ces valeurs en 5 minutes.</p>
+    <div class="config-inputs">
+      <div><label style="margin-top:0">API Key</label><input type="text" id="cfg-apiKey" placeholder="AIzaSy…" /></div>
+      <div><label style="margin-top:0">Auth Domain</label><input type="text" id="cfg-authDomain" placeholder="mon-projet.firebaseapp.com" /></div>
+      <div><label style="margin-top:0">Project ID</label><input type="text" id="cfg-projectId" placeholder="mon-projet" /></div>
+      <div><label style="margin-top:0">App ID</label><input type="text" id="cfg-appId" placeholder="1:123…" /></div>
+      <div style="grid-column:1/-1"><label style="margin-top:0">Database URL <span style="color:var(--danger)">★ important</span></label><input type="text" id="cfg-dbUrl" placeholder="https://mon-projet-default-rtdb.europe-west1.firebasedatabase.app" /></div>
+    </div>
+    <p style="font-size:.8rem;color:var(--muted);margin-top:.5rem">📍 L'URL de la base se trouve dans Firebase Console → Realtime Database → en haut de la page.</p>
+    <div class="btn-row" style="margin-top:.8rem">
+      <button class="btn btn-gold" onclick="saveConfig()">✓ Connecter Firebase</button>
+      <button class="btn btn-outline" onclick="document.getElementById('setup-banner').style.display='none'">Masquer</button>
+    </div>
+  </div>
+
+  <div class="stats">
+    <div class="stat"><div class="stat-num" id="stat-total">–</div><div class="stat-label">Participants</div></div>
+    <div class="stat"><div class="stat-num" id="stat-lots">–</div><div class="stat-label">Lots</div></div>
+    <div class="stat"><div class="stat-num" id="stat-tirages">–</div><div class="stat-label">Gagnants</div></div>
+  </div>
+
+  <div class="grid">
+    <div>
+      <div class="card">
+        <h2>⚙ Configuration événement</h2>
+        <label>Nom de l'événement</label>
+        <input type="text" id="event-name" value="Grande Loterie" />
+        <label>Lien participant</label>
+        <div class="link-box" id="link-box" onclick="copyLink()">
+          <span id="participant-url">Générer le QR code d'abord</span>
+          <span class="copy-hint">📋 copier</span>
+        </div>
+        <small>Ce lien s'ouvre sur l'autre fichier HTML (même dossier).</small>
+        <div class="btn-row">
+          <button class="btn btn-gold" onclick="generateQR()">Générer QR Code</button>
+          <button class="btn btn-outline" id="toggle-status" onclick="toggleStatus()">Fermer les inscriptions</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>📱 QR Code</h2>
+        <div id="qr-container">
+          <div style="color:var(--muted);font-size:.85rem;text-align:center">Configurez Firebase puis générez le QR code</div>
+        </div>
+        <div class="btn-row" id="qr-btns" style="display:none">
+          <button class="btn btn-outline" onclick="downloadQR()">⬇ Télécharger</button>
+          <button class="btn btn-outline" onclick="printQR()">🖨 Imprimer</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>🎁 Lots à gagner</h2>
+        <div id="lots-list"><div class="empty-state">Aucun lot</div></div>
+        <label>Ajouter un lot</label>
+        <div style="display:flex;gap:.5rem">
+          <input type="text" id="lot-input" placeholder="Ex : Bon cadeau 50€" style="flex:1" onkeydown="if(event.key==='Enter')addLot()" />
+          <button class="btn btn-gold" onclick="addLot()">+</button>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div class="card">
+        <div class="tab-row">
+          <button class="tab active" onclick="showTab('tab-participants',this)">Participants</button>
+          <button class="tab" onclick="showTab('tab-tirage',this)">Tirage</button>
+          <button class="tab" onclick="showTab('tab-gagnants',this)">Gagnants</button>
+        </div>
+
+        <div id="tab-participants" class="section active">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.8rem">
+            <small id="sync-info">En attente de Firebase…</small>
+            <button class="btn btn-outline" style="padding:.3rem .8rem;font-size:.78rem" onclick="exportCSV()">⬇ CSV</button>
+          </div>
+          <input type="text" id="search-input" placeholder="Rechercher…" oninput="renderParticipants()" style="margin-bottom:.8rem" />
+          <div class="participants-list" id="participants-list">
+            <div class="empty-state">En attente de données…</div>
+          </div>
+        </div>
+
+        <div id="tab-tirage" class="section">
+          <label>Lot à attribuer</label>
+          <select id="lot-select"><option value="">— Sélectionner un lot —</option></select>
+          <label>Nombre de gagnants</label>
+          <input type="number" id="nb-gagnants" value="1" min="1" max="50" />
+          <div style="margin-top:.5rem">
+            <label style="display:flex;align-items:center;gap:.5rem;text-transform:none;letter-spacing:0;cursor:pointer">
+              <input type="checkbox" id="exclude-winners" checked style="width:auto" />
+              <span style="font-size:.85rem;color:var(--text)">Exclure les gagnants précédents</span>
+            </label>
+          </div>
+          <div class="btn-row">
+            <button class="btn btn-gold" onclick="startDraw()">🎲 Lancer le tirage</button>
+          </div>
+        </div>
+
+        <div id="tab-gagnants" class="section">
+          <div id="gagnants-list"><div class="empty-state">Aucun tirage effectué.</div></div>
+          <div class="btn-row">
+            <button class="btn btn-danger" onclick="clearWinners()">Effacer les gagnants</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>➕ Ajouter manuellement</h2>
+        <label>Prénom &amp; Nom</label>
+        <input type="text" id="manual-name" placeholder="Marie Dupont" />
+        <label>Email (optionnel)</label>
+        <input type="email" id="manual-email" placeholder="marie@exemple.fr" />
+        <div class="btn-row">
+          <button class="btn btn-gold" onclick="addManual()">Ajouter</button>
+          <button class="btn btn-danger" onclick="clearAll()">Vider la liste</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="draw-overlay" id="draw-overlay" onclick="this.classList.remove('active')">
+  <div class="draw-label" id="draw-label">Tirage en cours…</div>
+  <div class="draw-drum rolling" id="draw-drum">—</div>
+</div>
+
+<!-- Firebase SDK -->
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import { getDatabase, ref, onValue, set, push, remove, update } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js';
+
+// ── State ──
+let db = null, listeners = [];
+let state = { open: true, event: 'Grande Loterie', participants: {}, lots: {}, winners: {} };
+
+// ── Config ──
+function loadConfig() {
+  try { return JSON.parse(localStorage.getItem('firebase_cfg') || 'null'); } catch(e) { return null; }
+}
+function saveConfig() {
+  const dbUrl = document.getElementById('cfg-dbUrl').value.trim();
+  const projectId = document.getElementById('cfg-projectId').value.trim();
+  const cfg = {
+    apiKey: document.getElementById('cfg-apiKey').value.trim(),
+    authDomain: document.getElementById('cfg-authDomain').value.trim(),
+    projectId,
+    appId: document.getElementById('cfg-appId').value.trim(),
+    databaseURL: dbUrl || `https://${projectId}-default-rtdb.europe-west1.firebasedatabase.app`
+  };
+  if (!cfg.apiKey) { alert('❌ L\'API Key est manquante.'); return; }
+  if (!cfg.projectId) { alert('❌ Le Project ID est manquant.'); return; }
+  if (!cfg.databaseURL.startsWith('https://')) { alert('❌ L\'URL de la base semble incorrecte.'); return; }
+  localStorage.setItem('firebase_cfg', JSON.stringify(cfg));
+  window.location.reload();
+}
+window.saveConfig = saveConfig;
+
+function connect(cfg) {
+  try {
+    if (!cfg.databaseURL) throw new Error('Database URL manquante');
+    const app = initializeApp(cfg);
+    db = getDatabase(app);
+    setStatus('pending', '⏳ Connexion à la base…');
+    document.getElementById('setup-banner').style.display = 'none';
+    listenAll();
+  } catch(e) {
+    setStatus('err', '✕ ' + e.message);
+    console.error('Firebase connect error:', e);
+    // Re-show banner so user can fix
+    document.getElementById('setup-banner').style.display = 'block';
+  }
+}
+
+function setStatus(type, msg) {
+  const el = document.getElementById('firebase-status');
+  el.className = 'firebase-status ' + type;
+  el.textContent = msg;
+}
+
+// ── Listen ──
+function listenAll() {
+  const root = ref(db, 'loterie');
+  onValue(root, snap => {
+    setStatus('ok', '● Firebase connecté');
+    const d = snap.val() || {};
+    state.open = d.open !== false;
+    state.event = d.event || 'Grande Loterie';
+    state.participants = d.participants || {};
+    state.lots = d.lots || {};
+    state.winners = d.winners || {};
+    render();
+    document.getElementById('sync-info').textContent = '🔄 Sync temps réel — ' + Object.keys(state.participants).length + ' inscrits';
+  }, e => {
+    const msg = e.message || '';
+    if (msg.includes('permission') || msg.includes('PERMISSION_DENIED')) {
+      setStatus('err', '✕ Accès refusé — vérifiez les règles Firebase');
+    } else if (msg.includes('network') || msg.includes('fetch')) {
+      setStatus('err', '✕ Erreur réseau — vérifiez votre connexion');
+    } else {
+      setStatus('err', '✕ ' + (msg || 'Erreur inconnue'));
+    }
+    console.error('Firebase listen error:', e);
+  });
+}
+
+// ── Render ──
+function render() {
+  document.getElementById('event-name').value = state.event;
+  const parts = Object.values(state.participants);
+  const lots = Object.values(state.lots);
+  const wins = Object.values(state.winners);
+  document.getElementById('stat-total').textContent = parts.length;
+  document.getElementById('stat-lots').textContent = lots.length;
+  document.getElementById('stat-tirages').textContent = wins.length;
+  renderParticipants();
+  renderLots();
+  renderGagnants();
+  updateStatus();
+  updateLotSelect();
+}
+window.renderParticipants = renderParticipants;
+
+function renderParticipants() {
+  const q = (document.getElementById('search-input').value||'').toLowerCase();
+  const parts = Object.entries(state.participants)
+    .filter(([,p]) => p.name.toLowerCase().includes(q) || (p.email||'').toLowerCase().includes(q))
+    .sort(([,a],[,b]) => (b.ts||0)-(a.ts||0));
+  const el = document.getElementById('participants-list');
+  if (!parts.length) { el.innerHTML = '<div class="empty-state">Aucun participant.</div>'; return; }
+  el.innerHTML = parts.map(([id,p],i) => {
+    const isW = Object.values(state.winners).some(w => w.participantId === id);
+    return `<div class="participant-item${isW?' winner':''}">
+      <span style="font-size:.85rem">${esc(p.name)}${p.email?`<br><small>${esc(p.email)}</small>`:''}</span>
+      <div style="display:flex;gap:.4rem;align-items:center">
+        ${isW?'<span class="badge badge-gold">Gagnant</span>':'<span class="badge badge-muted">Inscrit</span>'}
+        <button onclick="removeParticipant('${id}')" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:1.1rem" title="Supprimer">×</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderLots() {
+  const el = document.getElementById('lots-list');
+  const lots = Object.entries(state.lots);
+  if (!lots.length) { el.innerHTML = '<div class="empty-state">Aucun lot ajouté</div>'; return; }
+  el.innerHTML = lots.map(([id,l]) => `
+    <div class="lot-item">
+      <span>🎁 ${esc(l.name)}</span>
+      <button onclick="removeLot('${id}')" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:1.1rem">×</button>
+    </div>`).join('');
+}
+
+function renderGagnants() {
+  const el = document.getElementById('gagnants-list');
+  const wins = Object.values(state.winners).sort((a,b)=>(b.ts||0)-(a.ts||0));
+  if (!wins.length) { el.innerHTML = '<div class="empty-state">Aucun tirage effectué.</div>'; return; }
+  el.innerHTML = wins.map(w => `
+    <div class="participant-item winner">
+      <div><strong>${esc(w.name)}</strong><br><small style="color:var(--gold)">🎁 ${esc(w.lot||'–')}</small></div>
+      <span class="badge badge-gold">Gagnant</span>
+    </div>`).join('');
+}
+
+function updateStatus() {
+  const badge = document.getElementById('status-badge');
+  const btn = document.getElementById('toggle-status');
+  if (state.open) {
+    badge.innerHTML = '<span class="status-dot dot-open"></span>Inscriptions ouvertes';
+    btn.textContent = 'Fermer les inscriptions';
+  } else {
+    badge.innerHTML = '<span class="status-dot dot-closed"></span>Inscriptions fermées';
+    btn.textContent = 'Ouvrir les inscriptions';
+  }
+}
+
+function updateLotSelect() {
+  const sel = document.getElementById('lot-select');
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">— Sélectionner un lot —</option>' +
+    Object.values(state.lots).map(l => `<option value="${esc(l.name)}"${l.name===cur?' selected':''}>${esc(l.name)}</option>`).join('');
+}
+
+// ── Actions ──
+window.toggleStatus = () => { if(!db)return noDb(); set(ref(db,'loterie/open'), !state.open); };
+window.addLot = () => {
+  if(!db)return noDb();
+  const v = document.getElementById('lot-input').value.trim();
+  if(!v)return;
+  push(ref(db,'loterie/lots'), { name: v, ts: Date.now() });
+  document.getElementById('lot-input').value = '';
+};
+window.removeLot = id => { if(!db)return noDb(); remove(ref(db,'loterie/lots/'+id)); };
+window.addManual = () => {
+  if(!db)return noDb();
+  const name = document.getElementById('manual-name').value.trim();
+  const email = document.getElementById('manual-email').value.trim();
+  if(!name)return;
+  push(ref(db,'loterie/participants'), { name, email, ticket: uid().toUpperCase(), ts: Date.now() });
+  document.getElementById('manual-name').value = '';
+  document.getElementById('manual-email').value = '';
+};
+window.removeParticipant = id => { if(!db)return noDb(); if(confirm('Supprimer ce participant ?')) remove(ref(db,'loterie/participants/'+id)); };
+window.clearAll = () => {
+  if(!db)return noDb();
+  if(!confirm('Vider toute la liste ?'))return;
+  set(ref(db,'loterie/participants'), null);
+  set(ref(db,'loterie/winners'), null);
+};
+window.clearWinners = () => {
+  if(!db)return noDb();
+  if(!confirm('Effacer tous les gagnants ?'))return;
+  set(ref(db,'loterie/winners'), null);
+};
+
+// ── Tirage ──
+window.startDraw = () => {
+  if(!db)return noDb();
+  const lot = document.getElementById('lot-select').value;
+  const nb = parseInt(document.getElementById('nb-gagnants').value)||1;
+  const excludeW = document.getElementById('exclude-winners').checked;
+  const winnerIds = new Set(Object.values(state.winners).map(w=>w.participantId));
+  let pool = Object.entries(state.participants);
+  if(excludeW) pool = pool.filter(([id])=>!winnerIds.has(id));
+  if(!pool.length){alert('Pas de participants éligibles !');return;}
+  if(nb>pool.length){alert(`Seulement ${pool.length} éligible(s).`);return;}
+  const picks = shuffle(pool).slice(0,nb);
+  const overlay = document.getElementById('draw-overlay');
+  const drum = document.getElementById('draw-drum');
+  const label = document.getElementById('draw-label');
+  overlay.classList.add('active');
+  label.textContent = 'Tirage en cours…';
+  drum.className = 'draw-drum rolling';
+  let t=0;
+  const allNames = pool.map(([,p])=>p.name);
+  const iv = setInterval(()=>{
+    drum.textContent = allNames[Math.floor(Math.random()*allNames.length)];
+    t+=100;
+    if(t>2800){
+      clearInterval(iv);
+      drum.className = 'winner-reveal';
+      drum.textContent = picks.map(([,p])=>p.name).join(' & ');
+      label.innerHTML = `🎉 ${nb>1?nb+' gagnants !':'Gagnant !'}`;
+      picks.forEach(([id,p])=>{
+        push(ref(db,'loterie/winners'),{participantId:id,name:p.name,lot,ts:Date.now()});
+      });
+      setTimeout(()=>{
+        overlay.classList.remove('active');
+        showTab('tab-gagnants',document.querySelectorAll('.tab')[2]);
+      },3500);
+    }
+  },100);
+};
+
+// ── QR Code ──
+window.generateQR = () => {
+  if(!db)return noDb();
+  const name = document.getElementById('event-name').value;
+  set(ref(db,'loterie/event'), name);
+  // Build participant URL
+  const base = window.location.href.replace('loterie-admin.html','loterie-participant.html');
+  const cfg = loadConfig();
+  const url = base + '?event=' + encodeURIComponent(name)
+    + '&apiKey=' + encodeURIComponent(cfg.apiKey||'')
+    + '&projectId=' + encodeURIComponent(cfg.projectId||'')
+    + '&appId=' + encodeURIComponent(cfg.appId||'');
+  document.getElementById('participant-url').textContent = url;
+  const container = document.getElementById('qr-container');
+  container.innerHTML = '';
+  const div = document.createElement('div');
+  container.appendChild(div);
+  new QRCode(div,{text:url,width:220,height:220,colorDark:'#0D0D0D',colorLight:'#FFFFFF',correctLevel:QRCode.CorrectLevel.H});
+  const urlEl = document.createElement('div');
+  urlEl.style.cssText='font-size:.7rem;color:var(--muted);text-align:center;margin-top:.5rem;word-break:break-all';
+  urlEl.textContent = url;
+  container.appendChild(urlEl);
+  document.getElementById('qr-btns').style.display='flex';
+};
+window.downloadQR = ()=>{ const c=document.querySelector('#qr-container canvas');if(!c)return;const a=document.createElement('a');a.download='qrcode-loterie.png';a.href=c.toDataURL();a.click(); };
+window.printQR = ()=>{
+  const c=document.querySelector('#qr-container canvas');if(!c)return;
+  const w=window.open('','_blank');
+  w.document.write(`<html><body style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;font-family:serif;gap:1.5rem"><h1 style="color:#C9A84C">${document.getElementById('event-name').value}</h1><p style="color:#555">Scannez pour participer !</p><img src="${c.toDataURL()}" style="width:280px"/></body></html>`);
+  w.print();
+};
+window.copyLink = ()=>{
+  const url=document.getElementById('participant-url').textContent;
+  if(url==='Générer le QR code d\'abord')return;
+  navigator.clipboard.writeText(url).then(()=>{
+    const el=document.getElementById('participant-url');const prev=el.textContent;
+    el.textContent='✓ Copié !';setTimeout(()=>el.textContent=prev,1500);
+  });
+};
+window.exportCSV = ()=>{
+  const rows=[['Nom','Email','Téléphone','Ticket','Inscrit le','Gagnant']];
+  Object.values(state.participants).forEach(p=>{
+    const isW=Object.values(state.winners).some(w=>w.participantId===p.id);
+    rows.push([p.name,p.email||'',p.phone||'',p.ticket||'',new Date(p.ts).toLocaleString('fr'),isW?'Oui':'Non']);
+  });
+  const a=document.createElement('a');
+  a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(rows.map(r=>r.join(',')).join('\n'));
+  a.download='participants.csv';a.click();
+};
+window.showTab = (id,btn)=>{
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  if(btn)btn.classList.add('active');
+};
+
+function noDb(){ alert('Configurez Firebase d\'abord (voir le bandeau en haut).'); }
+function uid(){ return Math.random().toString(36).substr(2,8); }
+function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function shuffle(a){ const b=[...a];for(let i=b.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[b[i],b[j]]=[b[j],b[i]];}return b; }
+
+// ── Init ──
+const cfg = loadConfig();
+if(cfg && cfg.apiKey) {
+  document.getElementById('cfg-apiKey').value = cfg.apiKey;
+  document.getElementById('cfg-authDomain').value = cfg.authDomain||'';
+  document.getElementById('cfg-projectId').value = cfg.projectId||'';
+  document.getElementById('cfg-appId').value = cfg.appId||'';
+  document.getElementById('cfg-dbUrl').value = cfg.databaseURL||'';
+  connect(cfg);
+} else {
+  setStatus('err', '✕ Non configuré');
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Loterie — Participation</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400&family=DM+Sans:wght@300;400;500&display=swap');
+  :root{--gold:#C9A84C;--gold-light:#F0D78C;--gold-dim:rgba(201,168,76,.15);--deep:#0A0A0A;--surface:#161616;--surface2:#1F1F1F;--text:#F0EDE8;--muted:#777;--border:rgba(201,168,76,.2);--success:#4CAF88;--danger:#E05555}
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:'DM Sans',sans-serif;background:var(--deep);color:var(--text);min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2rem 1rem;position:relative;overflow-x:hidden}
+  body::before{content:'';position:fixed;inset:0;background-image:radial-gradient(circle at 20% 20%,rgba(201,168,76,.04) 0%,transparent 50%),radial-gradient(circle at 80% 80%,rgba(201,168,76,.04) 0%,transparent 50%);pointer-events:none;z-index:0}
+  .wrapper{width:100%;max-width:440px;position:relative;z-index:1}
+  .event-name{font-family:'Playfair Display',serif;font-size:1.8rem;font-weight:900;color:var(--gold);text-align:center;margin-bottom:.3rem;line-height:1.2}
+  .tagline{text-align:center;color:var(--muted);font-size:.88rem;margin-bottom:2rem;letter-spacing:.05em}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:2rem;margin-bottom:1rem}
+  .card h2{font-family:'Playfair Display',serif;font-size:1.1rem;color:var(--gold);margin-bottom:1.4rem;text-align:center}
+  label{display:block;font-size:.75rem;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:.4rem;margin-top:1.1rem}
+  input[type=text],input[type=email],input[type=tel]{width:100%;background:var(--surface2);border:1px solid rgba(255,255,255,.08);border-radius:8px;color:var(--text);padding:.85rem 1rem;font-family:'DM Sans',sans-serif;font-size:1rem;transition:border-color .2s,box-shadow .2s;-webkit-appearance:none}
+  input:focus{outline:none;border-color:var(--gold);box-shadow:0 0 0 3px rgba(201,168,76,.15)}
+  .btn-submit{width:100%;padding:1rem;background:var(--gold);color:var(--deep);border:none;border-radius:8px;font-family:'DM Sans',sans-serif;font-size:1rem;font-weight:700;cursor:pointer;margin-top:1.5rem;letter-spacing:.03em;transition:background .15s,transform .1s}
+  .btn-submit:hover{background:var(--gold-light)}.btn-submit:active{transform:scale(.99)}.btn-submit:disabled{opacity:.5;cursor:not-allowed}
+  .consent{display:flex;align-items:flex-start;gap:.7rem;margin-top:1.1rem}
+  .consent input[type=checkbox]{width:18px;height:18px;flex-shrink:0;accent-color:var(--gold);cursor:pointer;margin-top:2px}
+  .consent label{font-size:.78rem;color:var(--muted);text-transform:none;letter-spacing:0;margin:0;line-height:1.5}
+  .error-msg{font-size:.8rem;color:var(--danger);margin-top:.4rem;display:none}
+  .trophy{font-size:4rem;animation:bounceIn .6s cubic-bezier(.175,.885,.32,1.275)}
+  @keyframes bounceIn{from{opacity:0;transform:scale(.3)}50%{transform:scale(1.15)}to{opacity:1;transform:scale(1)}}
+  .success-title{font-family:'Playfair Display',serif;font-size:1.8rem;color:var(--gold);animation:fadeUp .5s ease .3s both}
+  .success-sub{color:var(--muted);font-size:.9rem;animation:fadeUp .5s ease .5s both;line-height:1.6}
+  .ticket{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:.8rem 1.5rem;font-size:1rem;color:var(--gold);letter-spacing:.15em;animation:fadeUp .5s ease .7s both;font-family:monospace}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+  .lots-preview{margin-top:1.5rem;text-align:center}
+  .lots-title{font-size:.72rem;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin-bottom:.8rem}
+  .lots-grid{display:flex;flex-wrap:wrap;gap:.5rem;justify-content:center}
+  .lot-chip{background:var(--gold-dim);border:1px solid var(--border);color:var(--gold-light);border-radius:20px;padding:.3rem .8rem;font-size:.8rem}
+  .divider{border:none;border-top:1px solid var(--border);margin:1.5rem 0}
+  .footer{text-align:center;color:var(--muted);font-size:.72rem;margin-top:1.5rem;letter-spacing:.05em}
+  .spinner{width:20px;height:20px;border:2px solid rgba(0,0,0,.3);border-top-color:var(--deep);border-radius:50%;animation:spin .7s linear infinite;display:inline-block;vertical-align:middle;margin-right:6px}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .counter{text-align:center;margin-bottom:1rem}
+  .counter-num{font-family:'Playfair Display',serif;font-size:2.5rem;color:var(--gold)}
+  .counter-label{font-size:.75rem;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+  .center-col{display:flex;flex-direction:column;align-items:center;text-align:center;gap:1rem;padding:1rem 0}
+  .err-banner{background:rgba(224,85,85,.1);border:1px solid rgba(224,85,85,.3);border-radius:8px;padding:1rem;color:var(--danger);font-size:.85rem;text-align:center}
+</style>
+</head>
+<body>
+<div class="wrapper">
+  <div class="event-name" id="event-title">✦ Loterie</div>
+  <div class="tagline">Participez et tentez votre chance !</div>
+
+  <!-- Loading -->
+  <div class="card" id="loading-card">
+    <div class="center-col" style="color:var(--muted);font-size:.9rem">
+      <span class="spinner" style="width:32px;height:32px;border-width:3px;border-top-color:var(--gold)"></span>
+      Connexion en cours…
+    </div>
+  </div>
+
+  <!-- Error -->
+  <div class="card" id="error-card" style="display:none">
+    <div class="err-banner" id="error-msg">Impossible de se connecter.</div>
+  </div>
+
+  <!-- Form -->
+  <div class="card" id="form-card" style="display:none">
+    <h2>Votre inscription</h2>
+    <div class="counter" id="counter-box" style="display:none">
+      <div class="counter-num" id="counter-num">0</div>
+      <div class="counter-label">participants inscrits</div>
+    </div>
+    <label>Prénom &amp; Nom *</label>
+    <input type="text" id="f-name" placeholder="Marie Dupont" autocomplete="name" />
+    <div class="error-msg" id="err-name">Merci d'entrer votre nom.</div>
+    <label>Adresse email</label>
+    <input type="email" id="f-email" placeholder="marie@exemple.fr" autocomplete="email" />
+    <label>Téléphone (optionnel)</label>
+    <input type="tel" id="f-phone" placeholder="+33 6 00 00 00 00" autocomplete="tel" />
+    <div class="consent">
+      <input type="checkbox" id="f-consent" />
+      <label for="f-consent">J'accepte que mes données soient utilisées dans le cadre de cet événement.</label>
+    </div>
+    <div class="error-msg" id="err-consent">Merci d'accepter les conditions.</div>
+    <div class="lots-preview" id="lots-preview" style="display:none">
+      <hr class="divider" />
+      <div class="lots-title">🎁 Lots à gagner</div>
+      <div class="lots-grid" id="lots-grid"></div>
+    </div>
+    <button class="btn-submit" id="submit-btn" onclick="submitForm()">Participer à la loterie ✦</button>
+  </div>
+
+  <!-- Success -->
+  <div class="card" id="success-card" style="display:none">
+    <div class="center-col">
+      <div class="trophy">🏆</div>
+      <div class="success-title">Vous êtes inscrit !</div>
+      <div class="success-sub">Votre participation a bien été enregistrée.<br>Bonne chance pour le tirage !</div>
+      <div class="ticket" id="ticket-num">— TICKET #000000 —</div>
+      <div style="font-size:.78rem;color:var(--muted);animation:fadeUp .5s ease .9s both">Conservez ce numéro de ticket.</div>
+    </div>
+  </div>
+
+  <!-- Closed -->
+  <div class="card" id="closed-card" style="display:none">
+    <div class="center-col">
+      <div style="font-size:3rem">🔒</div>
+      <div style="font-family:'Playfair Display',serif;font-size:1.6rem;color:var(--muted)">Inscriptions fermées</div>
+      <div style="color:var(--muted);font-size:.88rem">Les inscriptions sont actuellement fermées.<br>Merci de votre intérêt !</div>
+    </div>
+  </div>
+
+  <!-- Already registered -->
+  <div class="card" id="already-card" style="display:none">
+    <div class="center-col">
+      <div style="font-size:3rem">✅</div>
+      <div style="font-family:'Playfair Display',serif;font-size:1.6rem;color:var(--gold)">Déjà inscrit !</div>
+      <div style="color:var(--muted);font-size:.88rem">Vous participez déjà à cette loterie.<br>Bonne chance !</div>
+      <div class="ticket" id="existing-ticket">— TICKET #000000 —</div>
+    </div>
+  </div>
+
+  <div class="footer">✦ Loterie événement &nbsp;·&nbsp; Participation gratuite</div>
+</div>
+
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import { getDatabase, ref, onValue, push, get } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js';
+
+const params = new URLSearchParams(window.location.search);
+const eventName = decodeURIComponent(params.get('event')||'Loterie');
+const apiKey = decodeURIComponent(params.get('apiKey')||'');
+const projectId = decodeURIComponent(params.get('projectId')||'');
+const appId = decodeURIComponent(params.get('appId')||'');
+
+document.getElementById('event-title').textContent = '✦ ' + eventName;
+document.title = eventName + ' — Participation';
+
+function show(id) {
+  ['loading-card','error-card','form-card','success-card','closed-card','already-card']
+    .forEach(c => document.getElementById(c).style.display = c===id ? 'block' : 'none');
+}
+function showError(msg){ document.getElementById('error-msg').textContent=msg; show('error-card'); }
+
+if (!apiKey || !projectId) {
+  showError('Lien invalide. Demandez à l\'organisateur de regénérer le QR code.');
+} else {
+  const cfg = {
+    apiKey,
+    authDomain: projectId+'.firebaseapp.com',
+    databaseURL: 'https://'+projectId+'-default-rtdb.europe-west1.firebasedatabase.app',
+    projectId,
+    appId
+  };
+  try {
+    const app = initializeApp(cfg, 'participant-'+Date.now());
+    const db = getDatabase(app);
+
+    // Check if already registered (by ticket stored in localStorage)
+    const myTicket = localStorage.getItem('loterie_ticket_'+projectId);
+
+    onValue(ref(db,'loterie'), snap => {
+      const d = snap.val()||{};
+      const parts = Object.values(d.participants||{});
+
+      if (myTicket) {
+        show('already-card');
+        document.getElementById('existing-ticket').textContent = '— TICKET #'+myTicket+' —';
+        return;
+      }
+      if (!d.open) { show('closed-card'); return; }
+
+      // Show counter
+      if (parts.length > 0) {
+        document.getElementById('counter-box').style.display = 'block';
+        document.getElementById('counter-num').textContent = parts.length;
+      }
+      // Show lots
+      const lots = Object.values(d.lots||{});
+      if (lots.length) {
+        document.getElementById('lots-preview').style.display = 'block';
+        document.getElementById('lots-grid').innerHTML = lots.map(l=>`<span class="lot-chip">${esc(l.name)}</span>`).join('');
+      }
+      show('form-card');
+    }, e => showError('Erreur de connexion : '+e.message));
+
+    window.submitForm = async () => {
+      const name = document.getElementById('f-name').value.trim();
+      const email = document.getElementById('f-email').value.trim();
+      const phone = document.getElementById('f-phone').value.trim();
+      const consent = document.getElementById('f-consent').checked;
+      let valid = true;
+      document.getElementById('err-name').style.display='none';
+      document.getElementById('err-consent').style.display='none';
+      if (!name){ document.getElementById('err-name').style.display='block'; valid=false; }
+      if (!consent){ document.getElementById('err-consent').style.display='block'; valid=false; }
+      if (!valid) return;
+
+      const btn = document.getElementById('submit-btn');
+      btn.disabled=true;
+      btn.innerHTML='<span class="spinner"></span> Inscription…';
+
+      try {
+        // Check duplicate by name
+        const snap = await get(ref(db,'loterie/participants'));
+        const parts = snap.val()||{};
+        const dup = Object.values(parts).find(p=>p.name.toLowerCase()===name.toLowerCase());
+        if (dup) {
+          localStorage.setItem('loterie_ticket_'+projectId, dup.ticket||'???');
+          show('already-card');
+          document.getElementById('existing-ticket').textContent='— TICKET #'+(dup.ticket||'???')+' —';
+          return;
+        }
+
+        const ticket = Math.random().toString(36).substr(2,8).toUpperCase();
+        await push(ref(db,'loterie/participants'),{name,email,phone,ticket,ts:Date.now()});
+        localStorage.setItem('loterie_ticket_'+projectId, ticket);
+        document.getElementById('ticket-num').textContent='— TICKET #'+ticket+' —';
+        show('success-card');
+      } catch(e) {
+        btn.disabled=false;
+        btn.innerHTML='Participer à la loterie ✦';
+        alert('Erreur : '+e.message);
+      }
+    };
+  } catch(e) {
+    showError('Erreur Firebase : '+e.message);
+  }
+}
+
+function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+</script>
+</body>
+</html>

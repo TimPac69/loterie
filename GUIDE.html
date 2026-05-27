@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Guide — Mise en ligne sur GitHub Pages</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=DM+Sans:wght@400;500&display=swap');
+  :root{--gold:#C9A84C;--deep:#0D0D0D;--surface:#1A1A1A;--surface2:#242424;--text:#F0EDE8;--muted:#888;--border:rgba(201,168,76,.25);--success:#4CAF88;--danger:#E05555}
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:'DM Sans',sans-serif;background:var(--deep);color:var(--text);padding:2rem 1rem;max-width:700px;margin:0 auto;line-height:1.7}
+  h1{font-family:'Playfair Display',serif;color:var(--gold);font-size:2rem;margin-bottom:.4rem}
+  h2{font-family:'Playfair Display',serif;color:var(--gold);font-size:1.25rem;margin:2.2rem 0 .8rem}
+  p{color:#ccc;margin-bottom:.8rem;font-size:.93rem}
+  .step{display:flex;gap:1rem;align-items:flex-start;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:1.2rem 1.4rem;margin-bottom:.8rem}
+  .num{background:var(--gold);color:var(--deep);border-radius:50%;width:34px;height:34px;min-width:34px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.95rem}
+  .step-body strong{display:block;margin-bottom:.3rem;color:var(--text);font-size:.95rem}
+  .step-body p{margin:0;font-size:.86rem;color:var(--muted);line-height:1.6}
+  .step-body p a{color:var(--gold)}
+  code{background:var(--surface2);padding:.15rem .45rem;border-radius:4px;font-size:.84rem;color:var(--gold-light, #f0d78c);font-family:monospace}
+  .highlight{background:rgba(201,168,76,.09);border:1px solid var(--border);border-radius:8px;padding:1rem 1.2rem;font-size:.88rem;color:#ddd;margin:1.2rem 0}
+  .highlight strong{color:var(--gold)}
+  .url-box{background:var(--surface2);border:1px solid var(--border);border-radius:7px;padding:.85rem 1.1rem;font-family:monospace;font-size:.9rem;color:var(--gold);margin:.5rem 0 1rem;word-break:break-all}
+  .tag{display:inline-block;background:rgba(76,175,136,.15);color:var(--success);border-radius:4px;padding:.1rem .5rem;font-size:.76rem;margin-left:.3rem;vertical-align:middle}
+  img.screenshot{width:100%;border-radius:8px;border:1px solid var(--border);margin:.5rem 0}
+  hr{border:none;border-top:1px solid var(--border);margin:2rem 0}
+</style>
+</head>
+<body>
+
+<h1>🚀 Mise en ligne en 10 minutes</h1>
+<p>Suivez ces étapes pour héberger votre loterie gratuitement sur <strong style="color:var(--gold)">GitHub Pages</strong>. Vos invités pourront scanner le QR code depuis n'importe quel téléphone.</p>
+
+<h2>Partie 1 — Créer un compte GitHub</h2>
+
+<div class="step">
+  <div class="num">1</div>
+  <div class="step-body">
+    <strong>Allez sur <a href="https://github.com" target="_blank">github.com</a> et créez un compte gratuit</strong>
+    <p>Cliquez "Sign up", entrez votre email, choisissez un nom d'utilisateur et un mot de passe. Confirmez votre email.</p>
+  </div>
+</div>
+
+<h2>Partie 2 — Créer un dépôt (dossier en ligne)</h2>
+
+<div class="step">
+  <div class="num">2</div>
+  <div class="step-body">
+    <strong>Créez un nouveau dépôt</strong>
+    <p>Une fois connecté, cliquez sur le <strong>+</strong> en haut à droite → <strong>"New repository"</strong>.</p>
+  </div>
+</div>
+
+<div class="step">
+  <div class="num">3</div>
+  <div class="step-body">
+    <strong>Nommez le dépôt exactement : <code>loterie</code></strong>
+    <p>Laissez tout le reste par défaut. Cochez <strong>"Public"</strong>. Cochez <strong>"Add a README file"</strong>. Puis cliquez <strong>"Create repository"</strong>.</p>
+  </div>
+</div>
+
+<h2>Partie 3 — Déposer vos fichiers</h2>
+
+<div class="step">
+  <div class="num">4</div>
+  <div class="step-body">
+    <strong>Cliquez "Add file" → "Upload files"</strong>
+    <p>Vous êtes maintenant dans votre dépôt. Cliquez sur ce bouton en haut à droite de la liste de fichiers.</p>
+  </div>
+</div>
+
+<div class="step">
+  <div class="num">5</div>
+  <div class="step-body">
+    <strong>Glissez-déposez vos 3 fichiers HTML</strong>
+    <p>Faites glisser <code>loterie-admin.html</code>, <code>loterie-participant.html</code> et <code>GUIDE.html</code> dans la zone prévue.</p>
+  </div>
+</div>
+
+<div class="step">
+  <div class="num">6</div>
+  <div class="step-body">
+    <strong>Cliquez "Commit changes" (bouton vert en bas)</strong>
+    <p>Laissez le message par défaut. Vos fichiers sont maintenant en ligne.</p>
+  </div>
+</div>
+
+<h2>Partie 4 — Activer GitHub Pages</h2>
+
+<div class="step">
+  <div class="num">7</div>
+  <div class="step-body">
+    <strong>Allez dans Settings → Pages</strong>
+    <p>Dans votre dépôt, cliquez sur l'onglet <strong>"Settings"</strong> (icône ⚙ en haut), puis dans le menu gauche cliquez <strong>"Pages"</strong>.</p>
+  </div>
+</div>
+
+<div class="step">
+  <div class="num">8</div>
+  <div class="step-body">
+    <strong>Activez Pages depuis la branche main</strong>
+    <p>Sous "Branch", choisissez <code>main</code> dans le menu déroulant, laissez <code>/ (root)</code>, puis cliquez <strong>"Save"</strong>.</p>
+  </div>
+</div>
+
+<div class="step">
+  <div class="num">9</div>
+  <div class="step-body">
+    <strong>Attendez ~1 minute puis rafraîchissez la page</strong>
+    <p>Un bandeau vert apparaît avec votre URL publique :</p>
+  </div>
+</div>
+
+<div class="url-box">https://<span style="color:#F0D78C">votre-pseudo</span>.github.io/loterie/loterie-admin.html</div>
+
+<h2>Partie 5 — Configurer Firebase avec la nouvelle URL</h2>
+
+<div class="step">
+  <div class="num">10</div>
+  <div class="step-body">
+    <strong>Autorisez votre domaine dans Firebase</strong>
+    <p>Firebase Console → votre projet → Authentication → <strong>"Sign-in method"</strong> → onglet <strong>"Authorized domains"</strong> → <strong>"Add domain"</strong> → collez <code>votre-pseudo.github.io</code>.</p>
+  </div>
+</div>
+
+<div class="step">
+  <div class="num">11</div>
+  <div class="step-body">
+    <strong>Ouvrez la page admin en ligne et reconfigurez Firebase</strong>
+    <p>Allez sur <code>https://votre-pseudo.github.io/loterie/loterie-admin.html</code>, entrez vos identifiants Firebase (les mêmes qu'avant) + l'URL de la base, cliquez "Connecter".</p>
+  </div>
+</div>
+
+<div class="step">
+  <div class="num">12</div>
+  <div class="step-body">
+    <strong>Regénérez le QR code</strong>
+    <p>Cliquez "Générer QR Code" — il pointera désormais vers votre URL publique. Imprimez-le et vos invités peuvent scanner !</p>
+  </div>
+</div>
+
+<hr>
+
+<div class="highlight">
+  <strong>✅ Résumé de vos URLs finales</strong><br><br>
+  Page admin : <code>https://votre-pseudo.github.io/loterie/loterie-admin.html</code><br>
+  Page invité : <code>https://votre-pseudo.github.io/loterie/loterie-participant.html</code><br><br>
+  <strong>⚠️ Remplacez <code>votre-pseudo</code> par votre nom d'utilisateur GitHub.</strong>
+</div>
+
+<p style="margin-top:1.5rem;font-size:.82rem;color:var(--muted)">En cas de blocage à une étape, décrivez le problème — je vous aide pas à pas.</p>
+
+</body>
+</html>
