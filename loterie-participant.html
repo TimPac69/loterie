@@ -129,9 +129,7 @@ import { getDatabase, ref, onValue, push, get } from 'https://www.gstatic.com/fi
 
 const params = new URLSearchParams(window.location.search);
 const eventName = decodeURIComponent(params.get('event')||'Loterie');
-const apiKey = decodeURIComponent(params.get('apiKey')||'');
-const projectId = decodeURIComponent(params.get('projectId')||'');
-const appId = decodeURIComponent(params.get('appId')||'');
+const pid = params.get('pid')||'';
 
 document.getElementById('event-title').textContent = '✦ ' + eventName;
 document.title = eventName + ' — Participation';
@@ -142,91 +140,95 @@ function show(id) {
 }
 function showError(msg){ document.getElementById('error-msg').textContent=msg; show('error-card'); }
 
-if (!apiKey || !projectId) {
-  showError('Lien invalide. Demandez à l\'organisateur de regénérer le QR code.');
-} else {
-  const cfg = {
-    apiKey,
-    authDomain: projectId+'.firebaseapp.com',
-    databaseURL: 'https://'+projectId+'-default-rtdb.europe-west1.firebasedatabase.app',
-    projectId,
-    appId
-  };
+// Fetch Firebase config from public REST endpoint (stored by admin page)
+async function fetchConfig(projectId) {
+  const dbUrl = `https://${projectId}-default-rtdb.europe-west1.firebasedatabase.app`;
+  const r = await fetch(`${dbUrl}/loterie/config.json`);
+  if (!r.ok) throw new Error('Impossible de lire la configuration (HTTP '+r.status+')');
+  const cfg = await r.json();
+  if (!cfg || !cfg.apiKey) throw new Error('Configuration incomplète dans Firebase');
+  return { ...cfg, projectId, databaseURL: dbUrl, authDomain: projectId+'.firebaseapp.com' };
+}
+
+(async () => {
+  if (!pid) {
+    showError('QR code invalide — demandez à l\'organisateur de regénérer le QR code.');
+    return;
+  }
+  show('loading-card');
+  let cfg, db;
   try {
-    const app = initializeApp(cfg, 'participant-'+Date.now());
-    const db = getDatabase(app);
+    cfg = await fetchConfig(pid);
+    const app = initializeApp(cfg, 'p-'+Date.now());
+    db = getDatabase(app);
+  } catch(e) {
+    showError('Erreur de connexion : ' + e.message);
+    return;
+  }
 
-    // Check if already registered (by ticket stored in localStorage)
-    const myTicket = localStorage.getItem('loterie_ticket_'+projectId);
+  const myTicket = localStorage.getItem('loterie_ticket_'+pid);
 
-    onValue(ref(db,'loterie'), snap => {
-      const d = snap.val()||{};
-      const parts = Object.values(d.participants||{});
+  onValue(ref(db,'loterie'), snap => {
+    const d = snap.val()||{};
+    const parts = Object.values(d.participants||{});
 
-      if (myTicket) {
+    if (myTicket) {
+      show('already-card');
+      document.getElementById('existing-ticket').textContent = '— TICKET #'+myTicket+' —';
+      return;
+    }
+    if (!d.open) { show('closed-card'); return; }
+
+    if (parts.length > 0) {
+      document.getElementById('counter-box').style.display = 'block';
+      document.getElementById('counter-num').textContent = parts.length;
+    }
+    const lots = Object.values(d.lots||{});
+    if (lots.length) {
+      document.getElementById('lots-preview').style.display = 'block';
+      document.getElementById('lots-grid').innerHTML = lots.map(l=>`<span class="lot-chip">${esc(l.name)}</span>`).join('');
+    }
+    show('form-card');
+  }, e => showError('Erreur temps réel : '+e.message));
+
+  window.submitForm = async () => {
+    const name = document.getElementById('f-name').value.trim();
+    const email = document.getElementById('f-email').value.trim();
+    const phone = document.getElementById('f-phone').value.trim();
+    const consent = document.getElementById('f-consent').checked;
+    let valid = true;
+    document.getElementById('err-name').style.display='none';
+    document.getElementById('err-consent').style.display='none';
+    if (!name){ document.getElementById('err-name').style.display='block'; valid=false; }
+    if (!consent){ document.getElementById('err-consent').style.display='block'; valid=false; }
+    if (!valid) return;
+
+    const btn = document.getElementById('submit-btn');
+    btn.disabled=true;
+    btn.innerHTML='<span class="spinner"></span> Inscription…';
+
+    try {
+      const snap = await get(ref(db,'loterie/participants'));
+      const parts = snap.val()||{};
+      const dup = Object.values(parts).find(p=>p.name.toLowerCase()===name.toLowerCase());
+      if (dup) {
+        localStorage.setItem('loterie_ticket_'+pid, dup.ticket||'???');
         show('already-card');
-        document.getElementById('existing-ticket').textContent = '— TICKET #'+myTicket+' —';
+        document.getElementById('existing-ticket').textContent='— TICKET #'+(dup.ticket||'???')+' —';
         return;
       }
-      if (!d.open) { show('closed-card'); return; }
-
-      // Show counter
-      if (parts.length > 0) {
-        document.getElementById('counter-box').style.display = 'block';
-        document.getElementById('counter-num').textContent = parts.length;
-      }
-      // Show lots
-      const lots = Object.values(d.lots||{});
-      if (lots.length) {
-        document.getElementById('lots-preview').style.display = 'block';
-        document.getElementById('lots-grid').innerHTML = lots.map(l=>`<span class="lot-chip">${esc(l.name)}</span>`).join('');
-      }
-      show('form-card');
-    }, e => showError('Erreur de connexion : '+e.message));
-
-    window.submitForm = async () => {
-      const name = document.getElementById('f-name').value.trim();
-      const email = document.getElementById('f-email').value.trim();
-      const phone = document.getElementById('f-phone').value.trim();
-      const consent = document.getElementById('f-consent').checked;
-      let valid = true;
-      document.getElementById('err-name').style.display='none';
-      document.getElementById('err-consent').style.display='none';
-      if (!name){ document.getElementById('err-name').style.display='block'; valid=false; }
-      if (!consent){ document.getElementById('err-consent').style.display='block'; valid=false; }
-      if (!valid) return;
-
-      const btn = document.getElementById('submit-btn');
-      btn.disabled=true;
-      btn.innerHTML='<span class="spinner"></span> Inscription…';
-
-      try {
-        // Check duplicate by name
-        const snap = await get(ref(db,'loterie/participants'));
-        const parts = snap.val()||{};
-        const dup = Object.values(parts).find(p=>p.name.toLowerCase()===name.toLowerCase());
-        if (dup) {
-          localStorage.setItem('loterie_ticket_'+projectId, dup.ticket||'???');
-          show('already-card');
-          document.getElementById('existing-ticket').textContent='— TICKET #'+(dup.ticket||'???')+' —';
-          return;
-        }
-
-        const ticket = Math.random().toString(36).substr(2,8).toUpperCase();
-        await push(ref(db,'loterie/participants'),{name,email,phone,ticket,ts:Date.now()});
-        localStorage.setItem('loterie_ticket_'+projectId, ticket);
-        document.getElementById('ticket-num').textContent='— TICKET #'+ticket+' —';
-        show('success-card');
-      } catch(e) {
-        btn.disabled=false;
-        btn.innerHTML='Participer à la loterie ✦';
-        alert('Erreur : '+e.message);
-      }
-    };
-  } catch(e) {
-    showError('Erreur Firebase : '+e.message);
-  }
-}
+      const ticket = Math.random().toString(36).substr(2,8).toUpperCase();
+      await push(ref(db,'loterie/participants'),{name,email,phone,ticket,ts:Date.now()});
+      localStorage.setItem('loterie_ticket_'+pid, ticket);
+      document.getElementById('ticket-num').textContent='— TICKET #'+ticket+' —';
+      show('success-card');
+    } catch(e) {
+      btn.disabled=false;
+      btn.innerHTML='Participer à la loterie ✦';
+      alert('Erreur : '+e.message);
+    }
+  };
+})();
 
 function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 </script>
